@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import * as cheerio from "cheerio";
 import PerformanceChart, { ChartPoint } from "./components/PerformanceChart";
+import CommentsSection, { type Comment } from "./components/CommentsSection";
 
 // ─── 타입 정의 ────────────────────────────────────────────────
 type ETHPrice  = { price: number; change24h: number } | null;
@@ -398,9 +399,23 @@ const STATIC_UPDATES: UpdateItem[] = [
 
 const STAKING_MARKET_AVG_APY = 2.84; // 시장 평균 ETH 스테이킹 APY
 
+// ─── 댓글 페칭 ────────────────────────────────────────────────
+async function fetchComments(): Promise<Comment[]> {
+  try {
+    const supabase = createSupabaseClient();
+    const { data, error } = await supabase
+      .from("comments")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (error) { console.error("[Comments]", error.message); return []; }
+    return (data as Comment[]) ?? [];
+  } catch (e) { console.error("[Comments]", e); return []; }
+}
+
 // ─── 메인 페이지 ─────────────────────────────────────────────
 export default async function Home() {
-  const [ethData, btcData, bmnrData, bmnrHist, ethHist, supabaseData, newsItems, secItems] =
+  const [ethData, btcData, bmnrData, bmnrHist, ethHist, supabaseData, newsItems, secItems, initialComments] =
     await Promise.all([
       fetchETHPrice(),
       fetchBTCPrice(),
@@ -410,6 +425,7 @@ export default async function Home() {
       fetchSupabaseData(),
       fetchBitmineNews(),
       fetchSECFilings(),
+      fetchComments(),
     ]);
 
   // ── 시가총액 & mNAV ──────────────────────────────────────────
@@ -1226,7 +1242,10 @@ export default async function Home() {
           ))}
         </div>
 
-        <div className="mt-6 pt-6 border-t border-white/5 text-center text-xs text-white/20">
+        {/* 방문자 댓글 */}
+        <CommentsSection initialComments={initialComments} />
+
+        <div className="mt-8 pt-6 border-t border-white/5 text-center text-xs text-white/20">
           본 대시보드는 참고용 정보 제공 목적이며, 투자 권유가 아닙니다. © 2026 BMNR Dashboard
         </div>
       </main>
