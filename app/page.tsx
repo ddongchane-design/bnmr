@@ -1,5 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import * as cheerio from "cheerio";
+import YahooFinance from "yahoo-finance2";
+const yf = new YahooFinance();
+import Link from "next/link";
 import PerformanceChart, { ChartPoint } from "./components/PerformanceChart";
 import CommentsSection, { type Comment } from "./components/CommentsSection";
 
@@ -7,11 +10,20 @@ import CommentsSection, { type Comment } from "./components/CommentsSection";
 type ETHPrice  = { price: number; change24h: number } | null;
 type BTCPrice  = { price: number; change24h: number } | null;
 type BMNRPrice = {
-  price: number;
-  change: number;
-  changePct: number;
-  preMarketPrice:  number | null;
-  postMarketPrice: number | null;
+  price: number;            // 정규장 종가
+  change: number;           // 정규장 변동액
+  changePct: number;        // 정규장 변동률
+  currentPrice: number;     // postMarket ?? preMarket ?? regular (표시·계산 기준)
+  currentChange: number;    // 전일 종가 대비 변동액 (currentPrice 기준)
+  currentChangePct: number; // 전일 종가 대비 변동률 (currentPrice 기준)
+  priceType: "regular" | "pre-market" | "after-hours";
+  preMarketPrice:     number | null;
+  preMarketChange:    number | null;
+  preMarketChangePct: number | null;
+  postMarketPrice:     number | null;
+  postMarketChange:    number | null;
+  postMarketChangePct: number | null;
+  marketState: string | null;
 } | null;
 type UpdateItem = {
   date: string;      // YYYY-MM-DD
@@ -102,32 +114,91 @@ async function fetchBTCPrice(): Promise<BTCPrice> {
   } catch { return null; }
 }
 
+function buildBMNRPrice(
+  price: number,
+  prevClose: number,
+  prePrice: number | null,
+  postPrice: number | null,
+  marketState: string | null,
+): BMNRPrice {
+  const currentPrice =
+    postPrice != null ? postPrice :
+    prePrice  != null ? prePrice  : price;
+  const priceType: "regular" | "pre-market" | "after-hours" =
+    postPrice != null ? "after-hours" :
+    prePrice  != null ? "pre-market"  : "regular";
+  const currentChange    = currentPrice - prevClose;
+  const currentChangePct = prevClose > 0 ? (currentChange / prevClose) * 100 : 0;
+  const preChange     = prePrice  != null ? prePrice  - price : null;
+  const preChangePct  = prePrice  != null && price > 0 ? (preChange!  / price) * 100 : null;
+  const postChange    = postPrice != null ? postPrice - price : null;
+  const postChangePct = postPrice != null && price > 0 ? (postChange! / price) * 100 : null;
+  return {
+    price,
+    change:    price - prevClose,
+    changePct: prevClose > 0 ? ((price - prevClose) / prevClose) * 100 : 0,
+    currentPrice, currentChange, currentChangePct, priceType,
+    preMarketPrice: prePrice,   preMarketChange: preChange,   preMarketChangePct: preChangePct,
+    postMarketPrice: postPrice, postMarketChange: postChange, postMarketChangePct: postChangePct,
+    marketState,
+  };
+}
+
 async function fetchBMNRPrice(): Promise<BMNRPrice> {
+  // 1차: yahoo-finance2 (postMarket / preMarket / regular 자동 감지)
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const quote = await (yf.quote as any)("BMNR") as {
+      regularMarketPrice?: number | null;
+      regularMarketPreviousClose?: number | null;
+      preMarketPrice?: number | null;
+      postMarketPrice?: number | null;
+      marketState?: string | null;
+    } | null;
+    if (quote?.regularMarketPrice) {
+      const price     = quote.regularMarketPrice;
+      const prevClose = quote.regularMarketPreviousClose ?? price;
+      console.log("[yahoo-finance2] 성공:", { price, marketState: quote.marketState });
+      return buildBMNRPrice(
+        price, prevClose,
+        quote.preMarketPrice  ?? null,
+        quote.postMarketPrice ?? null,
+        quote.marketState     ?? null,
+      );
+    }
+  } catch (e) {
+    console.error("[yahoo-finance2] 실패:", e);
+  }
+
+  // 2차 폴백: Yahoo Finance chart API (v8)
   try {
     const res = await fetch(
-      "https://query2.finance.yahoo.com/v8/finance/chart/BMNR?interval=1d&range=5d",
+      "https://query1.finance.yahoo.com/v8/finance/chart/BMNR?interval=1d&range=5d",
       {
         headers: {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
           Accept: "application/json",
         },
         next: { revalidate: 60 },
       }
     );
-    if (!res.ok) return null;
+    if (!res.ok) { console.error("[chart API] HTTP", res.status); return null; }
     const data = await res.json();
     const meta = data?.chart?.result?.[0]?.meta;
-    if (!meta?.regularMarketPrice) return null;
+    if (!meta?.regularMarketPrice) { console.error("[chart API] 가격 없음"); return null; }
     const price: number     = meta.regularMarketPrice;
-    const prevClose: number = meta.previousClose ?? meta.chartPreviousClose ?? price;
-    return {
-      price,
-      change:          price - prevClose,
-      changePct:       ((price - prevClose) / prevClose) * 100,
-      preMarketPrice:  meta.preMarketPrice  ?? null,
-      postMarketPrice: meta.postMarketPrice ?? null,
-    };
-  } catch { return null; }
+    const prevClose: number = meta.chartPreviousClose ?? meta.previousClose ?? price;
+    console.log("[chart API] 폴백 성공:", { price, prevClose });
+    return buildBMNRPrice(
+      price, prevClose,
+      meta.preMarketPrice  ?? null,
+      meta.postMarketPrice ?? null,
+      meta.marketState     ?? null,
+    );
+  } catch (e) {
+    console.error("[chart API] 실패:", e);
+    return null;
+  }
 }
 
 // ─── 3개월 과거 데이터 ────────────────────────────────────────
@@ -213,7 +284,44 @@ const BMNR_NEWS_FALLBACK: UpdateItem[] = [
   },
 ];
 
-// Bitmine 공식 홈페이지 IR 페이지 스크래핑
+// __NEXT_DATA__ JSON 재귀 탐색
+function extractNewsFromJson(obj: unknown, depth = 0): UpdateItem[] {
+  if (depth > 10 || obj === null || typeof obj !== "object") return [];
+  if (Array.isArray(obj)) {
+    const candidates = obj.filter(
+      (item) => item && typeof item === "object" && !Array.isArray(item) &&
+        (item.title || item.headline || item.name) &&
+        (item.url || item.href || item.link || item.slug)
+    );
+    if (candidates.length >= 2) {
+      return candidates.slice(0, 8).map((item: Record<string, unknown>) => {
+        const title = String(item.title ?? item.headline ?? item.name ?? "").trim();
+        let url = String(item.url ?? item.href ?? item.link ?? item.slug ?? "").trim();
+        if (url.startsWith("/")) url = "https://www.bitminetech.io" + url;
+        if (!url.startsWith("http")) url = "https://www.bitminetech.io/investor-relations";
+        const rawDate = String(item.date ?? item.publishedAt ?? item.createdAt ?? item.pubDate ?? "");
+        return { date: tryParseDate(rawDate), title, desc: "bitminetech.io · Company News", tag: "뉴스", tagColor: "bg-blue-500/20 text-blue-400", url } as UpdateItem;
+      }).filter((it) => it.title.length >= 10);
+    }
+    for (const item of obj) {
+      const found = extractNewsFromJson(item, depth + 1);
+      if (found.length >= 2) return found;
+    }
+    return [];
+  }
+  const rec = obj as Record<string, unknown>;
+  const keys = Object.keys(rec).sort((a, b) =>
+    (/news|press|release|article|post|item/i.test(a) ? -1 : 0) -
+    (/news|press|release|article|post|item/i.test(b) ? -1 : 0)
+  );
+  for (const key of keys) {
+    const found = extractNewsFromJson(rec[key], depth + 1);
+    if (found.length >= 2) return found;
+  }
+  return [];
+}
+
+// Bitmine 공식 IR 뉴스 스크래핑
 async function fetchBitmineNews(): Promise<UpdateItem[]> {
   try {
     const res = await fetch("https://www.bitminetech.io/investor-relations", {
@@ -223,7 +331,7 @@ async function fetchBitmineNews(): Promise<UpdateItem[]> {
         Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.9",
       },
-      next: { revalidate: 3600 }, // 1시간에 한 번만 요청
+      next: { revalidate: 3600 },
     });
     if (!res.ok) {
       console.warn(`[BitmineNews] HTTP ${res.status} — 폴백 사용`);
@@ -232,64 +340,18 @@ async function fetchBitmineNews(): Promise<UpdateItem[]> {
 
     const html = await res.text();
     const $ = cheerio.load(html);
-    const items: UpdateItem[] = [];
-    const BASE = "https://www.bitminetech.io";
 
-    // 넓은 범위 → 좁은 범위 순으로 시도
-    const candidateSelectors = [
-      "[class*='news'] a[href]",
-      "[class*='press'] a[href]",
-      "[class*='release'] a[href]",
-      "[class*='article'] a[href]",
-      "article a[href]",
-      "li a[href]",
-      "a[href]",
-    ];
-
-    for (const selector of candidateSelectors) {
-      if (items.length >= 5) break;
-      let found = 0;
-      $(selector).each((_, el) => {
-        if (found >= 5) return;
-        const $el = $(el);
-        const title = $el.text().trim().replace(/\s+/g, " ");
-        if (title.length < 20 || title.length > 300) return;
-
-        let href = $el.attr("href") ?? "";
-        if (!href || href === "#" || href.startsWith("mailto:")) return;
-        if (href.startsWith("/")) href = BASE + href;
-        if (!href.startsWith("http")) return;
-        if (items.some((it) => it.url === href)) return; // 중복 제거
-
-        // 날짜 탐색: 부모 컨테이너 → time 태그 → date 클래스
-        const $container = $el.closest(
-          "article, li, div[class*='news'], div[class*='press'], div[class*='item']"
-        );
-        const $timeEl = $container.find("time").first();
-        const rawDate =
-          $timeEl.attr("datetime") ||
-          $timeEl.text().trim() ||
-          $container.find("[class*='date'], [class*='time']").first().text().trim() ||
-          "";
-
-        items.push({
-          date:     tryParseDate(rawDate),
-          title,
-          desc:     "bitminetech.io · Company News",
-          tag:      "뉴스",
-          tagColor: "bg-blue-500/20 text-blue-400",
-          url:      href,
-        });
-        found++;
-      });
-      if (items.length >= 3) break; // 충분한 항목이 나오면 즉시 중단
+    // __NEXT_DATA__ (Pages Router)
+    const nextDataRaw = $("#__NEXT_DATA__").text().trim();
+    if (nextDataRaw) {
+      try {
+        const nextData = JSON.parse(nextDataRaw);
+        const items = extractNewsFromJson(nextData);
+        if (items.length >= 1) return items.slice(0, 5);
+      } catch { /* 무시 */ }
     }
 
-    if (items.length >= 2) {
-      console.log(`[BitmineNews] 스크래핑 성공: ${items.length}개`);
-      return items.slice(0, 5);
-    }
-    console.warn("[BitmineNews] 파싱 결과 부족 — 폴백 사용");
+    console.warn("[BitmineNews] 파싱 실패 — 폴백 사용");
     return BMNR_NEWS_FALLBACK;
   } catch (e) {
     console.error("[BitmineNews] 오류:", e);
@@ -429,7 +491,7 @@ export default async function Home() {
     ]);
 
   // ── 시가총액 & mNAV ──────────────────────────────────────────
-  const bmnrPriceForCalc    = bmnrData?.price ?? BMNR_PRICE_FALLBACK;
+  const bmnrPriceForCalc    = bmnrData?.currentPrice ?? BMNR_PRICE_FALLBACK;
   const sharesOutstanding   = supabaseData?.shares_outstanding ?? SHARES_OUTSTANDING_FALLBACK;
   const ethTreasury         = supabaseData?.eth_treasury ?? null;
   const btcTreasury         = supabaseData?.btc_treasury ?? null;
@@ -446,9 +508,11 @@ export default async function Home() {
   const usingPriceFallback  = bmnrData === null;
   const usingSharesFallback = supabaseData?.shares_outstanding == null;
 
+  const cryptoNAV = (ethTreasury != null && ethData?.price ? ethTreasury * ethData.price : 0)
+                  + (btcTreasury != null && btcData?.price != null ? btcTreasury * btcData.price : 0);
   const mNAV: number | null =
-    ethTreasury != null && ethData?.price
-      ? bmnrMarketCap / (ethTreasury * ethData.price)
+    cryptoNAV > 0
+      ? bmnrMarketCap / cryptoNAV
       : null;
 
   const mNAVValue    = mNAV != null ? `${mNAV.toFixed(2)}x` : "계산 불가";
@@ -470,10 +534,10 @@ export default async function Home() {
     ethTreasury != null && ethData?.price != null && sharesOutstanding > 0
       ? (ethData.price * ethTreasury) / sharesOutstanding
       : null;
-  // BMNR 주가 vs NAV 프리미엄/디스카운트
+  // BMNR 주가 vs NAV 프리미엄/디스카운트 (시간 외 가격 반영)
   const navPremiumPct: number | null =
-    navPerShare != null && navPerShare > 0 && bmnrData?.price != null
-      ? ((bmnrData.price - navPerShare) / navPerShare) * 100
+    navPerShare != null && navPerShare > 0 && bmnrData != null
+      ? ((bmnrData.currentPrice - navPerShare) / navPerShare) * 100
       : null;
 
   // ── ETH 매집 달성률 ─────────────────────────────────────────
@@ -549,13 +613,22 @@ export default async function Home() {
   const metrics = [
     {
       label: "BMNR 현재 주가",
-      value: bmnrData ? fmt(bmnrData.price) : `${fmt(BMNR_PRICE_FALLBACK)} (폴백)`,
-      change: bmnrData ? fmtPct(bmnrData.changePct) : "–",
-      changePositive: bmnrData ? bmnrData.changePct >= 0 : true,
-      sub: bmnrData ? `전일 대비 ${fmt(bmnrData.change)}` : "Yahoo Finance 차단 — 폴백 사용 중",
+      value: bmnrData ? fmt(bmnrData.currentPrice) : `${fmt(BMNR_PRICE_FALLBACK)} (폴백)`,
+      change: bmnrData ? fmtPct(bmnrData.currentChangePct) : "–",
+      changePositive: bmnrData ? bmnrData.currentChangePct >= 0 : true,
+      sub: bmnrData
+        ? bmnrData.priceType !== "regular"
+          ? `정규장 종가 ${fmt(bmnrData.price)}`
+          : `전일 대비 ${fmt(bmnrData.change)}`
+        : "Yahoo Finance 차단 — 폴백 사용 중",
       icon: "Ξ", isLive: bmnrData !== null, failed: false,
-      prePrice:  bmnrData?.preMarketPrice  ?? null,
-      postPrice: bmnrData?.postMarketPrice ?? null,
+      priceType:  bmnrData?.priceType  ?? null,
+      prePrice:   bmnrData?.preMarketPrice   ?? null,
+      preChange:  bmnrData?.preMarketChange  ?? null,
+      preChangePct: bmnrData?.preMarketChangePct ?? null,
+      postPrice:  bmnrData?.postMarketPrice  ?? null,
+      postChange: bmnrData?.postMarketChange ?? null,
+      postChangePct: bmnrData?.postMarketChangePct ?? null,
     },
     {
       label: "mNAV 비율",
@@ -564,7 +637,12 @@ export default async function Home() {
       changePositive: mNAVPositive,
       sub: mNAVSub,
       icon: "◈", isLive: !mNAVFailed && !usingPriceFallback, failed: mNAVFailed,
-      prePrice: null, postPrice: null,
+      priceType: null, prePrice: null, preChange: null, preChangePct: null,
+      postPrice: null, postChange: null, postChangePct: null,
+      tooltip: {
+        formula: "시가총액 ÷ (ETH 보유량×ETH가격 + BTC 보유량×BTC가격)",
+        lines: ["시가총액 = BMNR 현재가 × 총 발행주식수", "1.0 미만 → NAV 대비 할인  /  초과 → 프리미엄"],
+      },
     },
     {
       label: "ETH 현재 가격",
@@ -572,7 +650,8 @@ export default async function Home() {
       change: ethData ? fmtPct(ethData.change24h) : "–",
       changePositive: ethData ? ethData.change24h >= 0 : true,
       sub: "24시간 변화율", icon: "Ξ", isLive: true, failed: ethData === null,
-      prePrice: null, postPrice: null,
+      priceType: null, prePrice: null, preChange: null, preChangePct: null,
+      postPrice: null, postChange: null, postChangePct: null,
     },
     {
       label: "NAV per Share",
@@ -581,7 +660,12 @@ export default async function Home() {
       changePositive: navPremiumPct != null ? navPremiumPct >= 0 : true,
       sub: navPerShare != null ? "ETH 자산 기반 주당 순자산가치" : "ETH 보유량 또는 가격 없음",
       icon: "$", isLive: navPerShare != null, failed: navPerShare === null,
-      prePrice: null, postPrice: null,
+      priceType: null, prePrice: null, preChange: null, preChangePct: null,
+      postPrice: null, postChange: null, postChangePct: null,
+      tooltip: {
+        formula: "(ETH 가격 × ETH 보유량) ÷ 총 발행주식수",
+        lines: ["ETH 자산을 주식 1주로 환산한 순자산가치", "프리미엄(%) = (현재가 − NAV/주) ÷ NAV/주 × 100"],
+      },
     },
   ];
 
@@ -590,13 +674,19 @@ export default async function Home() {
       {/* 헤더 */}
       <header className="border-b border-white/5 bg-[#0d0d14]/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <div className="w-7 h-7 rounded bg-orange-500 flex items-center justify-center text-xs font-bold">B</div>
             <span className="font-semibold text-sm tracking-wide text-white/90">BMNR Dashboard</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-white/30 font-mono">{lastUpdated}</span>
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-2" />
+          </Link>
+          <div className="flex items-center gap-6">
+            <nav className="flex items-center gap-5 text-sm text-white/40">
+              <Link href="/insights" className="hover:text-white/80 transition-colors">Insights</Link>
+              <Link href="/glossary" className="hover:text-white/80 transition-colors">Glossary</Link>
+            </nav>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-white/30 font-mono">{lastUpdated}</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-2" />
+            </div>
           </div>
         </div>
       </header>
@@ -612,8 +702,26 @@ export default async function Home() {
           {metrics.map((m) => (
             <div
               key={m.label}
-              className={`bg-[#13131e] border rounded-xl p-5 hover:border-white/10 transition-colors ${m.failed ? "border-rose-500/20" : "border-white/5"}`}
+              className={`relative group/card bg-[#13131e] border rounded-xl p-5 hover:border-white/10 transition-colors ${m.failed ? "border-rose-500/20" : "border-white/5"}`}
             >
+              {/* 계산식 툴팁 */}
+              {"tooltip" in m && m.tooltip && (
+                <div className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 z-50 hidden group-hover/card:block w-64">
+                  <div className="bg-[#1a1a2e] border border-white/10 rounded-xl px-3.5 py-3 shadow-2xl shadow-black/60">
+                    <div className="text-[9px] text-white/30 font-mono uppercase tracking-widest mb-1.5">계산식</div>
+                    <div className="font-mono text-[10px] text-white/70 bg-[#0a0a14] rounded-md px-2.5 py-1.5 mb-2 leading-snug">
+                      {m.tooltip.formula}
+                    </div>
+                    {m.tooltip.lines.map((line: string, i: number) => (
+                      <div key={i} className="text-[10px] text-white/35 leading-relaxed">{line}</div>
+                    ))}
+                  </div>
+                  {/* 말풍선 화살표 */}
+                  <div className="flex justify-center">
+                    <div className="w-2 h-2 bg-[#1a1a2e] border-r border-b border-white/10 rotate-45 -mt-1" />
+                  </div>
+                </div>
+              )}
               <div className="flex items-start justify-between mb-3">
                 <span className="text-xs text-white/40 font-medium uppercase tracking-widest">{m.label}</span>
                 <div className="flex items-center gap-1.5">
@@ -639,18 +747,12 @@ export default async function Home() {
               ) : (
                 <div className="text-xs text-rose-400/60">{m.sub}</div>
               )}
-              {(m.prePrice != null || m.postPrice != null) && (
-                <div className="flex items-center gap-3 mt-2 pt-2 border-t border-white/5">
-                  {m.prePrice != null && (
-                    <span className="text-[10px] text-white/30 font-mono">
-                      Pre <span className="text-white/50">{fmt(m.prePrice)}</span>
-                    </span>
-                  )}
-                  {m.postPrice != null && (
-                    <span className="text-[10px] text-white/30 font-mono">
-                      AH <span className="text-white/50">{fmt(m.postPrice)}</span>
-                    </span>
-                  )}
+              {/* 시간외 거래 배지 */}
+              {m.priceType && m.priceType !== "regular" && (
+                <div className="mt-2">
+                  <span className="text-[9px] font-mono font-semibold bg-amber-500/10 text-amber-400/80 border border-amber-500/20 px-1.5 py-0.5 rounded-full">
+                    {m.priceType === "after-hours" ? "After-hours" : "Pre-market"}
+                  </span>
                 </div>
               )}
             </div>
@@ -1245,10 +1347,21 @@ export default async function Home() {
         {/* 방문자 댓글 */}
         <CommentsSection initialComments={initialComments} />
 
-        <div className="mt-8 pt-6 border-t border-white/5 text-center text-xs text-white/20">
-          본 대시보드는 참고용 정보 제공 목적이며, 투자 권유가 아닙니다. © 2026 BMNR Dashboard
-        </div>
       </main>
+
+      {/* ── Footer ── */}
+      <footer className="mt-16 pt-8 border-t border-gray-800">
+        <div className="max-w-7xl mx-auto px-6 pb-10 flex flex-col items-center gap-3 text-sm text-gray-500">
+          <p>© 2026 BMNR Unofficial Dashboard. All rights reserved.</p>
+          <div className="flex items-center gap-3 text-xs">
+            <a href="/glossary" className="hover:text-gray-300 transition-colors">BMNR 용어 사전</a>
+            <span className="text-gray-700">|</span>
+            <a href="/privacy" className="hover:text-gray-300 transition-colors">개인정보처리방침</a>
+            <span className="text-gray-700">|</span>
+            <a href="/terms" className="hover:text-gray-300 transition-colors">이용약관 및 면책조항</a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

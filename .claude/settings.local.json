@@ -5,7 +5,9 @@
       "WebFetch(domain:query1.finance.yahoo.com)",
       "WebFetch(domain:www.sec.gov)",
       "WebFetch(domain:efts.sec.gov)",
-      "WebFetch(domain:data.sec.gov)"
+      "WebFetch(domain:data.sec.gov)",
+      "WebFetch(domain:www.bitminetech.io)",
+      "WebFetch(domain:www.prnewswire.com)"
     ]
   }
 }

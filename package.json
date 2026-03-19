@@ -11,9 +11,11 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.99.1",
     "cheerio": "^1.2.0",
+    "gray-matter": "^4.0.3",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "react-markdown": "^10.1.0",
     "recharts": "^3.8.0",
     "yahoo-finance2": "^3.13.2"
   },
