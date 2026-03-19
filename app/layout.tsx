@@ -13,9 +13,37 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const SITE_URL = "https://bnmr.vercel.app";
+
 export const metadata: Metadata = {
-  title: "BMNR Treasury Dashboard",
-  description: "비트마인(BMNR) 이더리움 자산 현황 및 핵심 지표 추적",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "BMNR Treasury Dashboard",
+    template: "%s | BMNR Dashboard",
+  },
+  description: "비트마인(BMNR) 이더리움 자산 현황 및 핵심 지표를 실시간으로 추적합니다. mNAV, NAV per Share, 스테이킹 수익, 트레저리 현황을 한눈에 확인하세요.",
+  keywords: ["BMNR", "비트마인", "이더리움", "ETH", "트레저리", "mNAV", "암호화폐", "Bitmine", "ETH treasury"],
+  authors: [{ name: "BMNR Dashboard" }],
+  alternates: {
+    canonical: SITE_URL,
+  },
+  openGraph: {
+    type: "website",
+    locale: "ko_KR",
+    url: SITE_URL,
+    siteName: "BMNR Treasury Dashboard",
+    title: "BMNR Treasury Dashboard",
+    description: "비트마인(BMNR) 이더리움 자산 현황 및 핵심 지표를 실시간으로 추적합니다.",
+  },
+  twitter: {
+    card: "summary",
+    title: "BMNR Treasury Dashboard",
+    description: "비트마인(BMNR) 이더리움 자산 현황 및 핵심 지표를 실시간으로 추적합니다.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
   other: {
     "google-adsense-account": "ca-pub-8574768875205211",
   },
@@ -27,7 +55,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="ko">
       <head>
         <Script
           async

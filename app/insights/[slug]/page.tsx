@@ -23,11 +23,31 @@ export async function generateStaticParams() {
   return files.map((f) => ({ slug: f.replace(/\.md$/, "") }));
 }
 
+const SITE_URL = "https://bnmr.vercel.app";
+
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
   const post = getPost(slug);
   if (!post) return {};
-  return { title: `${post.title} | BMNR Insights`, description: post.description };
+  const url = `${SITE_URL}/insights/${slug}`;
+  return {
+    title: post.title,
+    description: post.description,
+    alternates: { canonical: url },
+    openGraph: {
+      type: "article",
+      url,
+      title: post.title,
+      description: post.description,
+      publishedTime: post.date,
+      siteName: "BMNR Dashboard",
+    },
+    twitter: {
+      card: "summary",
+      title: post.title,
+      description: post.description,
+    },
+  };
 }
 
 export default async function InsightDetailPage({ params }: Props) {
@@ -35,8 +55,24 @@ export default async function InsightDetailPage({ params }: Props) {
   const post = getPost(slug);
   if (!post) notFound();
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: post.title,
+    description: post.description,
+    datePublished: post.date,
+    dateModified: post.date,
+    author: { "@type": "Organization", name: "BMNR Dashboard", url: SITE_URL },
+    publisher: { "@type": "Organization", name: "BMNR Dashboard", url: SITE_URL },
+    mainEntityOfPage: { "@type": "WebPage", "@id": `${SITE_URL}/insights/${slug}` },
+  };
+
   return (
     <div className="min-h-screen bg-[#0d0d14] text-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* 상단 내비게이션 */}
       <div className="border-b border-gray-800 bg-[#0d0d14]">
         <div className="max-w-7xl mx-auto px-6 h-8 flex items-center justify-end gap-3 text-xs text-gray-500">
