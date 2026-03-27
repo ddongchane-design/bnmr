@@ -670,31 +670,72 @@ export default async function Home() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0a0a0f] text-white font-sans">
-      {/* 헤더 */}
-      <header className="border-b border-white/5 bg-[#0d0d14]/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-            <div className="w-7 h-7 rounded bg-orange-500 flex items-center justify-center text-xs font-bold">B</div>
-            <span className="font-semibold text-sm tracking-wide text-white/90">BMNR Dashboard</span>
-          </Link>
-          <div className="flex items-center gap-6">
-            <nav className="flex items-center gap-5 text-sm text-white/40">
-              <Link href="/insights" className="hover:text-white/80 transition-colors">Insights</Link>
-              <Link href="/glossary" className="hover:text-white/80 transition-colors">Glossary</Link>
-            </nav>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-white/30 font-mono">{lastUpdated}</span>
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-2" />
+    <div className="min-h-screen bg-[#060e20] text-[#dee5ff] font-sans">
+
+      {/* ── Top Nav ── */}
+      <nav className="fixed top-0 w-full z-50 bg-[#060e20]/80 backdrop-blur-xl border-b border-[#6d758c]/15 h-16 flex items-center justify-between px-8">
+        <div className="flex items-center gap-8">
+          <Link href="/" className="text-2xl font-black tracking-tighter text-[#69f6b8]">BMNR</Link>
+          <div className="hidden md:flex items-center gap-6 text-sm">
+            <Link href="/insights" className="text-[#a3aac4] hover:text-[#dee5ff] transition-colors">Insights</Link>
+            <Link href="/glossary" className="text-[#a3aac4] hover:text-[#dee5ff] transition-colors">Glossary</Link>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-[#a3aac4] font-mono hidden sm:block">{lastUpdated}</span>
+          <span className="w-2 h-2 rounded-full bg-[#69f6b8] animate-pulse" />
+        </div>
+      </nav>
+
+      {/* ── Sidebar ── */}
+      <aside className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-[#091328] flex-col py-6 z-40 hidden md:flex border-r border-[#6d758c]/10">
+        <div className="px-6 mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded bg-[#69f6b8]/20 flex items-center justify-center">
+              <span className="text-[#69f6b8] font-black text-xl">B</span>
+            </div>
+            <div>
+              <div className="text-[#69f6b8] font-black leading-none text-sm">BMNR</div>
+              <div className="text-[10px] uppercase tracking-widest font-bold text-[#a3aac4]">Dashboard v1</div>
             </div>
           </div>
         </div>
-      </header>
+        <nav className="flex-grow space-y-1 px-3">
+          {[
+            { label: "Dashboard", icon: "dashboard", href: "/" },
+            { label: "Treasury", icon: "account_balance_wallet", href: "#treasury" },
+            { label: "Staking", icon: "layers", href: "#staking" },
+            { label: "Insights", icon: "auto_stories", href: "/insights" },
+          ].map((item) => (
+            <Link key={item.label} href={item.href}
+              className="flex items-center gap-3 px-3 py-3 text-[#a3aac4] hover:bg-[#192540]/30 hover:text-[#dee5ff] transition-all rounded-lg group text-[11px] font-bold uppercase tracking-widest">
+              <span className="material-symbols-outlined text-lg group-hover:translate-x-0.5 transition-transform">{item.icon}</span>
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+        <div className="mt-auto space-y-1 px-3 border-t border-[#6d758c]/10 pt-4">
+          {[
+            { label: "Glossary", icon: "menu_book", href: "/glossary" },
+            { label: "Privacy", icon: "shield", href: "/privacy" },
+          ].map((item) => (
+            <Link key={item.label} href={item.href}
+              className="flex items-center gap-3 px-3 py-3 text-[#a3aac4] hover:bg-[#192540]/30 hover:text-[#dee5ff] transition-all rounded-lg text-[11px] font-bold uppercase tracking-widest">
+              <span className="material-symbols-outlined text-lg">{item.icon}</span>
+              {item.label}
+            </Link>
+          ))}
+        </div>
+      </aside>
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold tracking-tight text-white">BMNR Treasury Dashboard</h1>
-          <p className="text-sm text-white/40 mt-1">비트마인(BMNR) 이더리움 자산 현황 및 핵심 지표 추적</p>
+      {/* ── Main Content ── */}
+      <main className="md:ml-64 pt-20 px-6 pb-12 max-w-[calc(100vw)] overflow-x-hidden">
+        <div className="max-w-7xl mx-auto">
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight text-[#dee5ff]">Treasury Overview</h1>
+            <p className="text-sm text-[#a3aac4] mt-1">비트마인(BMNR) 이더리움 자산 현황 및 핵심 지표 실시간 추적</p>
+          </div>
         </div>
 
         {/* 요약 카드 4개 */}
@@ -702,28 +743,29 @@ export default async function Home() {
           {metrics.map((m) => (
             <div
               key={m.label}
-              className={`relative group/card bg-[#13131e] border rounded-xl p-5 hover:border-white/10 transition-colors ${m.failed ? "border-rose-500/20" : "border-white/5"}`}
+              className={`relative group/card glass-card rounded-xl p-5 hover:bg-[#192540]/60 transition-all overflow-hidden ${m.failed ? "border-rose-500/20" : ""}`}
             >
+              <div className="absolute top-0 right-0 w-20 h-20 bg-[#69f6b8]/5 rounded-full -mr-10 -mt-10 group-hover/card:scale-110 transition-transform" />
               {/* 계산식 툴팁 */}
               {"tooltip" in m && m.tooltip && (
                 <div className="pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2 -translate-x-1/2 z-50 hidden group-hover/card:block w-64">
-                  <div className="bg-[#1a1a2e] border border-white/10 rounded-xl px-3.5 py-3 shadow-2xl shadow-black/60">
-                    <div className="text-[9px] text-white/30 font-mono uppercase tracking-widest mb-1.5">계산식</div>
-                    <div className="font-mono text-[10px] text-white/70 bg-[#0a0a14] rounded-md px-2.5 py-1.5 mb-2 leading-snug">
+                  <div className="bg-[#0d1526] border border-[#6d758c]/20 rounded-xl px-3.5 py-3 shadow-2xl shadow-black/60">
+                    <div className="text-[9px] text-[#6d758c] font-mono uppercase tracking-widest mb-1.5">계산식</div>
+                    <div className="font-mono text-[10px] text-[#a3aac4] bg-[#091328] rounded-md px-2.5 py-1.5 mb-2 leading-snug">
                       {m.tooltip.formula}
                     </div>
                     {m.tooltip.lines.map((line: string, i: number) => (
-                      <div key={i} className="text-[10px] text-white/35 leading-relaxed">{line}</div>
+                      <div key={i} className="text-[10px] text-[#6d758c] leading-relaxed">{line}</div>
                     ))}
                   </div>
                   {/* 말풍선 화살표 */}
                   <div className="flex justify-center">
-                    <div className="w-2 h-2 bg-[#1a1a2e] border-r border-b border-white/10 rotate-45 -mt-1" />
+                    <div className="w-2 h-2 bg-[#0d1526] border-r border-b border-[#6d758c]/20 rotate-45 -mt-1" />
                   </div>
                 </div>
               )}
               <div className="flex items-start justify-between mb-3">
-                <span className="text-xs text-white/40 font-medium uppercase tracking-widest">{m.label}</span>
+                <span className="text-xs text-[#a3aac4] font-medium uppercase tracking-widest">{m.label}</span>
                 <div className="flex items-center gap-1.5">
                   {m.isLive && !m.failed && (
                     <span className="text-[9px] font-bold bg-emerald-500/15 text-emerald-400 px-1.5 py-0.5 rounded-full tracking-wider">LIVE</span>
@@ -731,10 +773,10 @@ export default async function Home() {
                   {m.failed && (
                     <span className="text-[9px] font-bold bg-rose-500/15 text-rose-400 px-1.5 py-0.5 rounded-full tracking-wider">ERROR</span>
                   )}
-                  <span className="text-lg text-white/20">{m.icon}</span>
+                  <span className="text-lg text-[#6d758c]/60">{m.icon}</span>
                 </div>
               </div>
-              <div className={`font-bold tracking-tight mb-1 ${m.failed ? "text-white/30 text-lg" : "text-3xl"}`}>
+              <div className={`font-bold tracking-tight mb-1 ${m.failed ? "text-[#dee5ff]/30 text-lg" : "text-3xl text-[#dee5ff]"}`}>
                 {m.value}
               </div>
               {!m.failed ? (
@@ -742,7 +784,7 @@ export default async function Home() {
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${m.changePositive ? "bg-emerald-500/15 text-emerald-400" : "bg-rose-500/15 text-rose-400"}`}>
                     {m.changePositive ? "▲" : "▼"} {m.change}
                   </span>
-                  <span className="text-xs text-white/30">{m.sub}</span>
+                  <span className="text-xs text-[#6d758c]">{m.sub}</span>
                 </div>
               ) : (
                 <div className="text-xs text-rose-400/60">{m.sub}</div>
@@ -762,7 +804,7 @@ export default async function Home() {
         {/* ══════════════════════════════════════════════════════════
             Total Treasury vs Market Cap 비교 분석
         ══════════════════════════════════════════════════════════ */}
-        <div className="relative bg-[#0d0f1a] border border-white/8 rounded-xl p-6 mb-6 overflow-hidden">
+        <div className="relative bg-[#0d1526] border border-[#6d758c]/20 rounded-xl p-6 mb-6 overflow-hidden">
           {/* 배경 그리드 */}
           <div
             className="absolute inset-0 opacity-20"
@@ -795,12 +837,12 @@ export default async function Home() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[9px] font-bold tracking-widest bg-white/8 text-white/50 px-2 py-0.5 rounded-full border border-white/10">
+                  <span className="text-[9px] font-bold tracking-widest bg-[#192540]/30 text-[#a3aac4] px-2 py-0.5 rounded-full border border-[#6d758c]/20">
                     VALUATION
                   </span>
-                  <h2 className="text-sm font-semibold text-white/80">Total Treasury vs Market Cap</h2>
+                  <h2 className="text-sm font-semibold text-[#dee5ff]/80">Total Treasury vs Market Cap</h2>
                 </div>
-                <p className="text-xs text-white/30">
+                <p className="text-xs text-[#6d758c]">
                   실시간 자산 가치와 시가총액을 비교해 고평가·저평가 여부를 판단합니다
                 </p>
               </div>
@@ -826,7 +868,7 @@ export default async function Home() {
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-2 px-4 py-2 rounded-xl border shrink-0 bg-white/5 border-white/10 text-white/30">
+                <div className="flex items-center gap-2 px-4 py-2 rounded-xl border shrink-0 bg-[#192540]/20 border-[#6d758c]/20 text-[#6d758c]">
                   <span className="text-sm">–</span>
                   <div className="text-xs">데이터 부족</div>
                 </div>
@@ -840,16 +882,16 @@ export default async function Home() {
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-sm bg-amber-500/80" />
-                    <span className="text-xs text-white/60 font-medium">Market Cap (시가총액)</span>
+                    <span className="text-xs text-[#a3aac4] font-medium">Market Cap (시가총액)</span>
                     {usingPriceFallback && (
                       <span className="text-[9px] text-amber-500/60 bg-amber-500/10 px-1.5 py-0.5 rounded-full">주가 폴백</span>
                     )}
                   </div>
-                  <span className="text-sm font-bold font-mono tabular-nums text-white/90">
+                  <span className="text-sm font-bold font-mono tabular-nums text-[#dee5ff]">
                     {fmtCompact(bmnrMarketCap)}
                   </span>
                 </div>
-                <div className="relative h-8 bg-[#060810] rounded-lg border border-white/5 overflow-hidden">
+                <div className="relative h-8 bg-[#091328] rounded-lg border border-[#6d758c]/15 overflow-hidden">
                   <div
                     className="absolute inset-y-0 left-0 rounded-lg transition-all duration-700"
                     style={{ width: `${marketCapBarPct}%` }}
@@ -862,7 +904,7 @@ export default async function Home() {
                     {[25, 50, 75].map((pct) => (
                       <div
                         key={pct}
-                        className="absolute top-0 bottom-0 w-px bg-white/5"
+                        className="absolute top-0 bottom-0 w-px bg-[#192540]/20"
                         style={{ left: `${pct}%` }}
                       />
                     ))}
@@ -875,16 +917,16 @@ export default async function Home() {
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500/80" />
-                    <span className="text-xs text-white/60 font-medium">Total Treasury (총 자산)</span>
+                    <span className="text-xs text-[#a3aac4] font-medium">Total Treasury (총 자산)</span>
                     {!treasuryDataAvailable && (
                       <span className="text-[9px] text-rose-400/60 bg-rose-500/10 px-1.5 py-0.5 rounded-full">데이터 없음</span>
                     )}
                   </div>
-                  <span className="text-sm font-bold font-mono tabular-nums text-white/90">
+                  <span className="text-sm font-bold font-mono tabular-nums text-[#dee5ff]">
                     {totalTreasury != null ? fmtCompact(totalTreasury) : "–"}
                   </span>
                 </div>
-                <div className="relative h-8 bg-[#060810] rounded-lg border border-white/5 overflow-hidden">
+                <div className="relative h-8 bg-[#091328] rounded-lg border border-[#6d758c]/15 overflow-hidden">
                   <div
                     className="absolute inset-y-0 left-0 rounded-lg transition-all duration-700"
                     style={{ width: `${treasuryBarPct}%` }}
@@ -896,7 +938,7 @@ export default async function Home() {
                     {[25, 50, 75].map((pct) => (
                       <div
                         key={pct}
-                        className="absolute top-0 bottom-0 w-px bg-white/5"
+                        className="absolute top-0 bottom-0 w-px bg-[#192540]/20"
                         style={{ left: `${pct}%` }}
                       />
                     ))}
@@ -909,13 +951,13 @@ export default async function Home() {
             {allocationSegments.length > 0 && (
               <details className="group mb-5">
                 <summary className="flex items-center justify-between cursor-pointer list-none select-none mb-0">
-                  <span className="text-[10px] text-white/35 font-mono uppercase tracking-widest">
+                  <span className="text-[10px] text-[#6d758c] font-mono uppercase tracking-widest">
                     자산 비율
                   </span>
-                  <span className="flex items-center gap-1.5 text-[10px] text-white/25 font-mono">
+                  <span className="flex items-center gap-1.5 text-[10px] text-[#6d758c] font-mono">
                     <span className="hidden group-open:inline">접기</span>
                     <span className="inline group-open:hidden">펼치기</span>
-                    <span className="w-4 h-4 rounded border border-white/10 bg-white/5 flex items-center justify-center text-[9px] font-bold text-white/40 group-open:rotate-45 transition-transform duration-200">
+                    <span className="w-4 h-4 rounded border border-[#6d758c]/20 bg-[#192540]/20 flex items-center justify-center text-[9px] font-bold text-[#a3aac4] group-open:rotate-45 transition-transform duration-200">
                       +
                     </span>
                   </span>
@@ -923,7 +965,7 @@ export default async function Home() {
 
                 <div className="mt-3">
                   {/* 누적 막대 */}
-                  <div className="flex h-5 rounded-full overflow-hidden gap-[1px] bg-[#060810]">
+                  <div className="flex h-5 rounded-full overflow-hidden gap-[1px] bg-[#091328]">
                     {allocationSegments.map((seg) => (
                       <div
                         key={seg.label}
@@ -932,12 +974,12 @@ export default async function Home() {
                       >
                         {/* 호버 툴팁 */}
                         <div className="absolute bottom-7 left-1/2 -translate-x-1/2 hidden group-hover/seg:flex flex-col items-center pointer-events-none z-10">
-                          <div className="bg-[#12121c] border border-white/10 rounded-lg px-2.5 py-1.5 text-[10px] font-mono whitespace-nowrap shadow-xl">
+                          <div className="bg-[#0d1526] border border-[#6d758c]/20 rounded-lg px-2.5 py-1.5 text-[10px] font-mono whitespace-nowrap shadow-xl">
                             <span className="font-bold" style={{ color: seg.color }}>{seg.label}</span>
-                            <span className="text-white/50 ml-1.5">{seg.pct.toFixed(1)}%</span>
-                            <span className="text-white/30 ml-1.5">{fmtCompact(seg.value)}</span>
+                            <span className="text-[#a3aac4] ml-1.5">{seg.pct.toFixed(1)}%</span>
+                            <span className="text-[#6d758c] ml-1.5">{fmtCompact(seg.value)}</span>
                           </div>
-                          <div className="w-1.5 h-1.5 bg-[#12121c] border-r border-b border-white/10 rotate-45 -mt-1" />
+                          <div className="w-1.5 h-1.5 bg-[#0d1526] border-r border-b border-[#6d758c]/20 rotate-45 -mt-1" />
                         </div>
                       </div>
                     ))}
@@ -947,7 +989,7 @@ export default async function Home() {
                     {allocationSegments.map((seg) => (
                       <div key={seg.label} className="flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: seg.color }} />
-                        <span className="text-[10px] text-white/40 font-mono">{seg.label}</span>
+                        <span className="text-[10px] text-[#a3aac4] font-mono">{seg.label}</span>
                         <span className="text-[10px] font-bold font-mono" style={{ color: seg.color }}>
                           {seg.pct.toFixed(1)}%
                         </span>
@@ -959,75 +1001,75 @@ export default async function Home() {
             )}
 
             {/* Treasury 구성 브레이크다운 */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-4 border-t border-white/5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 pt-4 border-t border-[#6d758c]/15">
               {/* ETH Value */}
-              <div className="bg-[#060810] rounded-lg p-3 border border-white/5">
+              <div className="bg-[#091328] rounded-lg p-3 border border-[#6d758c]/15">
                 <div className="flex items-center gap-1.5 mb-2">
                   <span className="text-base">Ξ</span>
-                  <span className="text-[10px] text-white/35 font-mono uppercase tracking-widest">ETH</span>
+                  <span className="text-[10px] text-[#6d758c] font-mono uppercase tracking-widest">ETH</span>
                 </div>
                 <div className="text-base font-bold font-mono tabular-nums text-blue-400">
                   {ethValue != null ? fmtCompact(ethValue) : "–"}
                 </div>
-                <div className="text-[10px] text-white/25 mt-0.5 font-mono">
+                <div className="text-[10px] text-[#6d758c] mt-0.5 font-mono">
                   {ethTreasury != null ? `${ethTreasury.toLocaleString()} ETH` : "–"}
                   {ethData?.price != null && (
-                    <span className="ml-1 text-white/20">@ {fmtCompact(ethData.price)}</span>
+                    <span className="ml-1 text-[#6d758c]/60">@ {fmtCompact(ethData.price)}</span>
                   )}
                 </div>
               </div>
 
               {/* BTC Value */}
-              <div className="bg-[#060810] rounded-lg p-3 border border-white/5">
+              <div className="bg-[#091328] rounded-lg p-3 border border-[#6d758c]/15">
                 <div className="flex items-center gap-1.5 mb-2">
                   <span className="text-base text-orange-400">₿</span>
-                  <span className="text-[10px] text-white/35 font-mono uppercase tracking-widest">BTC</span>
+                  <span className="text-[10px] text-[#6d758c] font-mono uppercase tracking-widest">BTC</span>
                 </div>
                 <div className="text-base font-bold font-mono tabular-nums text-orange-400">
                   {btcValue != null ? fmtCompact(btcValue) : "–"}
                 </div>
-                <div className="text-[10px] text-white/25 mt-0.5 font-mono">
+                <div className="text-[10px] text-[#6d758c] mt-0.5 font-mono">
                   {btcTreasury != null ? `${btcTreasury.toLocaleString()} BTC` : "–"}
                   {btcData?.price != null && (
-                    <span className="ml-1 text-white/20">@ {fmtCompact(btcData.price)}</span>
+                    <span className="ml-1 text-[#6d758c]/60">@ {fmtCompact(btcData.price)}</span>
                   )}
                 </div>
               </div>
 
               {/* Cash */}
-              <div className="bg-[#060810] rounded-lg p-3 border border-white/5">
+              <div className="bg-[#091328] rounded-lg p-3 border border-[#6d758c]/15">
                 <div className="flex items-center gap-1.5 mb-2">
                   <span className="text-base text-green-400">$</span>
-                  <span className="text-[10px] text-white/35 font-mono uppercase tracking-widest">Cash</span>
+                  <span className="text-[10px] text-[#6d758c] font-mono uppercase tracking-widest">Cash</span>
                 </div>
                 <div className="text-base font-bold font-mono tabular-nums text-green-400">
                   {cashHoldings != null ? fmtCompact(cashHoldings) : "–"}
                 </div>
-                <div className="text-[10px] text-white/25 mt-0.5">현금 보유액 (USD)</div>
+                <div className="text-[10px] text-[#6d758c] mt-0.5">현금 보유액 (USD)</div>
               </div>
 
               {/* Beast Industries */}
-              <div className="bg-[#060810] rounded-lg p-3 border border-white/5">
+              <div className="bg-[#091328] rounded-lg p-3 border border-[#6d758c]/15">
                 <div className="flex items-center gap-1.5 mb-2">
                   <span className="text-base">🦁</span>
-                  <span className="text-[10px] text-white/35 font-mono uppercase tracking-widest">Beast Ind.</span>
+                  <span className="text-[10px] text-[#6d758c] font-mono uppercase tracking-widest">Beast Ind.</span>
                 </div>
                 <div className="text-base font-bold font-mono tabular-nums text-purple-400">
                   {beastIndustries != null ? fmtCompact(beastIndustries) : "–"}
                 </div>
-                <div className="text-[10px] text-white/25 mt-0.5">Beast Industries 지분</div>
+                <div className="text-[10px] text-[#6d758c] mt-0.5">Beast Industries 지분</div>
               </div>
 
               {/* Eightco Holdings */}
-              <div className="bg-[#060810] rounded-lg p-3 border border-white/5">
+              <div className="bg-[#091328] rounded-lg p-3 border border-[#6d758c]/15">
                 <div className="flex items-center gap-1.5 mb-2">
                   <span className="text-base text-sky-400">8</span>
-                  <span className="text-[10px] text-white/35 font-mono uppercase tracking-widest">Eightco</span>
+                  <span className="text-[10px] text-[#6d758c] font-mono uppercase tracking-widest">Eightco</span>
                 </div>
                 <div className="text-base font-bold font-mono tabular-nums text-sky-400">
                   {eightcoHoldings != null ? fmtCompact(eightcoHoldings) : "–"}
                 </div>
-                <div className="text-[10px] text-white/25 mt-0.5">Eightco Holdings 지분</div>
+                <div className="text-[10px] text-[#6d758c] mt-0.5">Eightco Holdings 지분</div>
               </div>
 
               {/* Difference */}
@@ -1036,13 +1078,13 @@ export default async function Home() {
                   ? isPremium
                     ? "bg-amber-500/5 border-amber-500/20"
                     : "bg-emerald-500/5 border-emerald-500/20"
-                  : "bg-[#060810] border-white/5"
+                  : "bg-[#091328] border-[#6d758c]/15"
               }`}>
                 <div className="flex items-center gap-1.5 mb-2">
                   <span className={`text-[10px] font-mono uppercase tracking-widest ${
                     premiumDiscountPct != null
                       ? isPremium ? "text-amber-400/60" : "text-emerald-400/60"
-                      : "text-white/35"
+                      : "text-[#6d758c]"
                   }`}>
                     {isPremium ? "Premium" : "Discount"}
                   </span>
@@ -1050,7 +1092,7 @@ export default async function Home() {
                 <div className={`text-base font-bold font-mono tabular-nums ${
                   premiumDiscountPct != null
                     ? isPremium ? "text-amber-400" : "text-emerald-400"
-                    : "text-white/30"
+                    : "text-[#6d758c]"
                 }`}>
                   {premiumDiscountPct != null && totalTreasury != null
                     ? fmtCompact(Math.abs(bmnrMarketCap - totalTreasury))
@@ -1059,7 +1101,7 @@ export default async function Home() {
                 <div className={`text-[10px] mt-0.5 font-mono ${
                   premiumDiscountPct != null
                     ? isPremium ? "text-amber-400/50" : "text-emerald-400/50"
-                    : "text-white/25"
+                    : "text-[#6d758c]"
                 }`}>
                   {premiumDiscountPct != null
                     ? `${isPremium ? "+" : ""}${premiumDiscountPct.toFixed(2)}% 차이`
@@ -1071,7 +1113,7 @@ export default async function Home() {
         </div>
 
         {/* ETH 매집 목표 달성률 */}
-        <div className="relative bg-[#0d0f1a] border border-cyan-500/20 rounded-xl p-6 mb-6 overflow-hidden">
+        <div className="relative bg-[#071224] border border-cyan-500/20 rounded-xl p-6 mb-6 overflow-hidden">
           <div
             className="absolute inset-0 opacity-30"
             style={{
@@ -1090,9 +1132,9 @@ export default async function Home() {
                   <span className="text-[9px] font-bold tracking-widest bg-cyan-500/15 text-cyan-400 px-2 py-0.5 rounded-full border border-cyan-500/20">
                     MISSION
                   </span>
-                  <h2 className="text-sm font-semibold text-white/80">ETH 전략 매집 목표</h2>
+                  <h2 className="text-sm font-semibold text-[#dee5ff]/80">ETH 전략 매집 목표</h2>
                 </div>
-                <p className="text-xs text-white/30">
+                <p className="text-xs text-[#6d758c]">
                   이더리움 총 공급량({ETH_TOTAL_SUPPLY.toLocaleString()} ETH)의 5% 매집 전략 달성 현황
                 </p>
               </div>
@@ -1100,12 +1142,12 @@ export default async function Home() {
                 <div className="text-3xl font-bold font-mono tabular-nums text-cyan-400 tracking-tight">
                   {ethAcqPct != null ? `${ethAcqPct.toFixed(3)}%` : "–"}
                 </div>
-                <div className="text-[10px] text-white/25 mt-0.5 font-mono">of target achieved</div>
+                <div className="text-[10px] text-[#6d758c] mt-0.5 font-mono">of target achieved</div>
               </div>
             </div>
 
             <div className="mb-5">
-              <div className="relative h-7 bg-[#060810] rounded border border-cyan-500/15 overflow-hidden">
+              <div className="relative h-7 bg-[#091328] rounded border border-cyan-500/15 overflow-hidden">
                 <div className="absolute inset-0 flex pointer-events-none">
                   {Array.from({ length: 20 }).map((_, i) => (
                     <div key={i} className="flex-1 border-r border-black/50 last:border-0" />
@@ -1122,7 +1164,7 @@ export default async function Home() {
               </div>
               <div className="flex justify-between mt-1.5 px-0.5">
                 {["0%", "25%", "50%", "75%", "100%"].map((label) => (
-                  <span key={label} className="text-[9px] text-white/15 font-mono">{label}</span>
+                  <span key={label} className="text-[9px] text-[#6d758c]/40 font-mono">{label}</span>
                 ))}
               </div>
             </div>
@@ -1133,32 +1175,32 @@ export default async function Home() {
                 <div className="text-lg font-bold font-mono tabular-nums text-cyan-400">
                   {ethTreasury != null ? ethTreasury.toLocaleString() : "–"}
                 </div>
-                <div className="text-[10px] text-white/25 font-mono">ETH</div>
+                <div className="text-[10px] text-[#6d758c] font-mono">ETH</div>
               </div>
               <div className="text-center">
-                <div className="text-[10px] text-white/30 font-mono uppercase tracking-widest mb-1">남은 목표</div>
-                <div className="text-lg font-bold font-mono tabular-nums text-white/50">
+                <div className="text-[10px] text-[#6d758c] font-mono uppercase tracking-widest mb-1">남은 목표</div>
+                <div className="text-lg font-bold font-mono tabular-nums text-[#a3aac4]">
                   {ethRemaining != null ? ethRemaining.toLocaleString() : "–"}
                 </div>
-                <div className="text-[10px] text-white/25 font-mono">ETH 필요</div>
+                <div className="text-[10px] text-[#6d758c] font-mono">ETH 필요</div>
               </div>
               <div className="text-right">
-                <div className="text-[10px] text-white/20 font-mono uppercase tracking-widest mb-1">최종 목표</div>
-                <div className="text-lg font-bold font-mono tabular-nums text-white/30">
+                <div className="text-[10px] text-[#6d758c]/60 font-mono uppercase tracking-widest mb-1">최종 목표</div>
+                <div className="text-lg font-bold font-mono tabular-nums text-[#6d758c]">
                   {ETH_TARGET.toLocaleString()}
                 </div>
-                <div className="text-[10px] text-white/20 font-mono">ETH (총공급 5%)</div>
+                <div className="text-[10px] text-[#6d758c]/60 font-mono">ETH (총공급 5%)</div>
               </div>
             </div>
           </div>
         </div>
 
         {/* 3개월 퍼포먼스 차트 */}
-        <div className="bg-[#13131e] border border-white/5 rounded-xl p-6 mb-6">
+        <div className="bg-[#0d1526] border border-[#6d758c]/15 rounded-xl p-6 mb-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
-              <h2 className="text-sm font-semibold text-white/80">BMNR vs ETH — 3개월 퍼포먼스 비교</h2>
-              <p className="text-xs text-white/30 mt-0.5">3개월 전 첫 거래일 = 100 기준 정규화</p>
+              <h2 className="text-sm font-semibold text-[#dee5ff]/80">BMNR vs ETH — 3개월 퍼포먼스 비교</h2>
+              <p className="text-xs text-[#6d758c] mt-0.5">3개월 전 첫 거래일 = 100 기준 정규화</p>
             </div>
             <div className="flex items-center gap-4">
               {[
@@ -1167,7 +1209,7 @@ export default async function Home() {
               ].map(({ name, color, perf }) => (
                 <div key={name} className="flex items-center gap-2">
                   <span className="w-3 h-0.5 rounded-full" style={{ backgroundColor: color }} />
-                  <span className="text-xs text-white/50">{name}</span>
+                  <span className="text-xs text-[#a3aac4]">{name}</span>
                   {perf !== null && (
                     <span className="text-xs font-bold tabular-nums" style={{ color }}>
                       {parseFloat(perf) >= 0 ? "+" : ""}{perf}%
@@ -1185,7 +1227,7 @@ export default async function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
           {/* ── ETH 스테이킹 섹션 ── */}
-          <div className="lg:col-span-2 relative bg-[#0d0b1a] border border-violet-500/15 rounded-xl p-6 overflow-hidden">
+          <div className="lg:col-span-2 relative bg-[#0d0f1e] border border-violet-500/20 rounded-xl p-6 overflow-hidden">
             {/* 코너 액센트 */}
             <div className="absolute top-0 left-0 w-32 h-0.5 bg-gradient-to-r from-violet-500 to-transparent" />
             <div className="absolute top-0 left-0 w-0.5 h-16 bg-gradient-to-b from-violet-500 to-transparent" />
@@ -1198,9 +1240,9 @@ export default async function Home() {
                     <span className="text-[9px] font-bold tracking-widest bg-violet-500/15 text-violet-400 px-2 py-0.5 rounded-full border border-violet-500/20">
                       STAKING
                     </span>
-                    <h2 className="text-sm font-semibold text-white/80">이더리움 스테이킹 현황</h2>
+                    <h2 className="text-sm font-semibold text-[#dee5ff]/80">이더리움 스테이킹 현황</h2>
                   </div>
-                  <p className="text-xs text-white/30">보유 ETH 스테이킹 운용 현황 및 실시간 예상 수익</p>
+                  <p className="text-xs text-[#6d758c]">보유 ETH 스테이킹 운용 현황 및 실시간 예상 수익</p>
                 </div>
                 {stakedEth != null && (
                   <span className="text-[9px] font-bold bg-emerald-500/15 text-emerald-400 px-1.5 py-0.5 rounded-full tracking-wider shrink-0">LIVE</span>
@@ -1210,13 +1252,13 @@ export default async function Home() {
               {/* 요약 카드 3개 */}
               <div className="grid grid-cols-3 gap-3 mb-6">
                 {/* Total Staked */}
-                <div className="bg-[#09071a] border border-violet-500/20 rounded-xl p-4">
+                <div className="bg-[#0d1526] border border-violet-500/20 rounded-xl p-4">
                   <div className="text-[9px] text-violet-400/50 font-mono uppercase tracking-widest mb-3">Total Staked</div>
                   <div className="text-2xl font-bold font-mono tabular-nums text-violet-300 leading-none">
                     {stakedEth != null ? stakedEth.toLocaleString() : "–"}
                   </div>
                   <div className="text-[10px] text-violet-400/40 font-mono mt-1 mb-2">ETH</div>
-                  <div className="text-[10px] text-white/30">
+                  <div className="text-[10px] text-[#6d758c]">
                     보유량 대비{" "}
                     <span className="text-violet-300/80 font-bold">
                       {stakingPct != null ? `${stakingPct.toFixed(1)}%` : "–"}
@@ -1225,7 +1267,7 @@ export default async function Home() {
                 </div>
 
                 {/* Current APY */}
-                <div className="bg-[#09071a] border border-emerald-500/20 rounded-xl p-4">
+                <div className="bg-[#0d1526] border border-emerald-500/20 rounded-xl p-4">
                   <div className="text-[9px] text-emerald-400/50 font-mono uppercase tracking-widest mb-3">Current APY</div>
                   <div className="text-2xl font-bold font-mono tabular-nums text-emerald-400 leading-none">
                     {stakingApy != null ? `${stakingApy}%` : "–"}
@@ -1243,25 +1285,25 @@ export default async function Home() {
                 </div>
 
                 {/* Annual Revenue */}
-                <div className="bg-[#09071a] border border-amber-500/20 rounded-xl p-4">
+                <div className="bg-[#0d1526] border border-amber-500/20 rounded-xl p-4">
                   <div className="text-[9px] text-amber-400/50 font-mono uppercase tracking-widest mb-3">Annual Revenue</div>
                   <div className="text-2xl font-bold font-mono tabular-nums text-amber-400 leading-none">
                     {annualRevenue != null ? fmtCompact(annualRevenue) : "–"}
                   </div>
                   <div className="text-[10px] text-amber-400/40 font-mono mt-1 mb-2">예상 연간 수익</div>
-                  <div className="text-[10px] text-white/25">
+                  <div className="text-[10px] text-[#6d758c]">
                     @ ETH {ethData?.price != null ? fmt(ethData.price) : "–"}
                   </div>
                 </div>
               </div>
 
               {/* 상세 현황 표 */}
-              <div className="border border-white/[0.06] rounded-xl overflow-hidden">
+              <div className="border border-[#6d758c]/15 rounded-xl overflow-hidden">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-white/[0.06] bg-white/[0.02]">
-                      <th className="text-left text-[9px] text-white/25 font-mono uppercase tracking-widest px-4 py-2.5 font-normal">항목</th>
-                      <th className="text-right text-[9px] text-white/25 font-mono uppercase tracking-widest px-4 py-2.5 font-normal">상세 내용</th>
+                    <tr className="border-b border-[#6d758c]/15 bg-[#192540]/10">
+                      <th className="text-left text-[9px] text-[#6d758c] font-mono uppercase tracking-widest px-4 py-2.5 font-normal">항목</th>
+                      <th className="text-right text-[9px] text-[#6d758c] font-mono uppercase tracking-widest px-4 py-2.5 font-normal">상세 내용</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1277,13 +1319,13 @@ export default async function Home() {
                       { label: "스테이킹 형태",    value: "Liquid Staking",                                                                                                color: "none"    },
                       { label: "리워드 주기",      value: "자동 복리 (매 에포크)",                                                                                         color: "none"    },
                     ].map((row, i) => (
-                      <tr key={i} className="border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] transition-colors">
-                        <td className="px-4 py-2.5 text-[11px] text-white/35 font-mono">{row.label}</td>
+                      <tr key={i} className="border-b border-[#6d758c]/10 last:border-0 hover:bg-[#192540]/20 transition-colors">
+                        <td className="px-4 py-2.5 text-[11px] text-[#6d758c] font-mono">{row.label}</td>
                         <td className={`px-4 py-2.5 text-[11px] text-right font-mono font-semibold tabular-nums ${
                           row.color === "violet"  ? "text-violet-300" :
                           row.color === "emerald" ? "text-emerald-400" :
                           row.color === "amber"   ? "text-amber-400" :
-                          "text-white/60"
+                          "text-[#a3aac4]"
                         }`}>{row.value}</td>
                       </tr>
                     ))}
@@ -1294,34 +1336,34 @@ export default async function Home() {
           </div>
 
           {/* 최근 주요 업데이트 (Bitmine IR + SEC 공시) */}
-          <div className="bg-[#13131e] border border-white/5 rounded-xl p-6 flex flex-col">
+          <div className="bg-[#0d1526] border border-[#6d758c]/15 rounded-xl p-6 flex flex-col">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-sm font-semibold text-white/80">최근 주요 업데이트</h2>
+              <h2 className="text-sm font-semibold text-[#dee5ff]/80">최근 주요 업데이트</h2>
               <div className="flex items-center gap-1.5">
                 <span className="text-[9px] font-bold bg-blue-500/15 text-blue-400 px-1.5 py-0.5 rounded-full tracking-wider">IR</span>
-                <span className="text-[9px] text-white/20">
+                <span className="text-[9px] text-[#6d758c]/60">
                   뉴스 {newsItems.length} · SEC {secItems.length}
                 </span>
               </div>
             </div>
             <div className="flex flex-col gap-3 overflow-y-auto flex-1" style={{ maxHeight: "520px" }}>
               {combinedUpdates.map((u, i) => (
-                <div key={i} className="pb-3 border-b border-white/5 last:border-0 last:pb-0">
+                <div key={i} className="pb-3 border-b border-[#6d758c]/15 last:border-0 last:pb-0">
                   <div className="flex items-center justify-between mb-1.5">
                     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${u.tagColor}`}>{u.tag}</span>
-                    <span className="text-[10px] text-white/25 font-mono">{u.date}</span>
+                    <span className="text-[10px] text-[#6d758c] font-mono">{u.date}</span>
                   </div>
                   {u.url ? (
                     <a href={u.url} target="_blank" rel="noopener noreferrer" className="group block">
-                      <div className="text-xs font-medium text-white/75 leading-snug mb-1 group-hover:text-white/95 transition-colors line-clamp-2">
+                      <div className="text-xs font-medium text-[#dee5ff]/80 leading-snug mb-1 group-hover:text-[#dee5ff] transition-colors line-clamp-2">
                         {u.title}
-                        <span className="inline-block ml-1 text-white/20 group-hover:text-white/50 text-[9px]">↗</span>
+                        <span className="inline-block ml-1 text-[#6d758c]/60 group-hover:text-[#a3aac4] text-[9px]">↗</span>
                       </div>
                     </a>
                   ) : (
-                    <div className="text-xs font-medium text-white/75 leading-snug mb-1">{u.title}</div>
+                    <div className="text-xs font-medium text-[#dee5ff]/80 leading-snug mb-1">{u.title}</div>
                   )}
-                  <div className="text-[11px] text-white/30 leading-relaxed">{u.desc}</div>
+                  <div className="text-[11px] text-[#6d758c] leading-relaxed">{u.desc}</div>
                 </div>
               ))}
             </div>
@@ -1337,7 +1379,7 @@ export default async function Home() {
             { color: "bg-cyan-500/60",    label: `ETH 목표: ${ETH_TARGET.toLocaleString()} ETH (총공급 5%)` },
             { color: "bg-sky-500/60",     label: "뉴스: bitminetech.io IR · 공시: SEC EDGAR" },
           ].map(({ color, label }) => (
-            <div key={label} className="flex items-center gap-1.5 text-xs text-white/25">
+            <div key={label} className="flex items-center gap-1.5 text-xs text-[#6d758c]">
               <span className={`w-1.5 h-1.5 rounded-full ${color}`} />
               {label}
             </div>
@@ -1347,21 +1389,37 @@ export default async function Home() {
         {/* 방문자 댓글 */}
         <CommentsSection initialComments={initialComments} />
 
+        {/* ── Footer ── */}
+        <footer className="mt-16 pt-8 border-t border-[#6d758c]/15">
+          <div className="pb-10 flex flex-col items-center gap-3 text-sm text-[#a3aac4]">
+            <p>© 2026 BMNR Unofficial Dashboard. All rights reserved.</p>
+            <div className="flex items-center gap-3 text-xs">
+              <a href="/glossary" className="hover:text-[#dee5ff] transition-colors">BMNR 용어 사전</a>
+              <span className="text-[#6d758c]">|</span>
+              <a href="/privacy" className="hover:text-[#dee5ff] transition-colors">개인정보처리방침</a>
+              <span className="text-[#6d758c]">|</span>
+              <a href="/terms" className="hover:text-[#dee5ff] transition-colors">이용약관 및 면책조항</a>
+            </div>
+          </div>
+        </footer>
+
+        </div> {/* max-w-7xl */}
       </main>
 
-      {/* ── Footer ── */}
-      <footer className="mt-16 pt-8 border-t border-gray-800">
-        <div className="max-w-7xl mx-auto px-6 pb-10 flex flex-col items-center gap-3 text-sm text-gray-500">
-          <p>© 2026 BMNR Unofficial Dashboard. All rights reserved.</p>
-          <div className="flex items-center gap-3 text-xs">
-            <a href="/glossary" className="hover:text-gray-300 transition-colors">BMNR 용어 사전</a>
-            <span className="text-gray-700">|</span>
-            <a href="/privacy" className="hover:text-gray-300 transition-colors">개인정보처리방침</a>
-            <span className="text-gray-700">|</span>
-            <a href="/terms" className="hover:text-gray-300 transition-colors">이용약관 및 면책조항</a>
-          </div>
-        </div>
-      </footer>
+      {/* ── Mobile Bottom Nav ── */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#060e20]/90 backdrop-blur-xl border-t border-[#6d758c]/15 h-16 flex items-center justify-around z-50 pb-safe">
+        {[
+          { label: "Dashboard", icon: "dashboard", href: "/" },
+          { label: "Treasury", icon: "account_balance_wallet", href: "#treasury" },
+          { label: "Insights", icon: "auto_stories", href: "/insights" },
+          { label: "Glossary", icon: "menu_book", href: "/glossary" },
+        ].map((item) => (
+          <Link key={item.label} href={item.href} className="flex flex-col items-center gap-1 text-[#a3aac4] hover:text-[#69f6b8] transition-colors">
+            <span className="material-symbols-outlined text-xl">{item.icon}</span>
+            <span className="text-[8px] font-bold uppercase tracking-widest">{item.label}</span>
+          </Link>
+        ))}
+      </nav>
     </div>
   );
 }

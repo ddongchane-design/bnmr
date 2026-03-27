@@ -20,7 +20,27 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #060e20;
+  color: #dee5ff;
+  font-family: var(--font-inter), var(--font-geist-sans), Arial, sans-serif;
+}
+
+.glass-card {
+  background: rgba(25, 37, 64, 0.4);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(109, 117, 140, 0.15);
+}
+
+.text-gradient-primary {
+  background: linear-gradient(135deg, #69f6b8 0%, #06b77f 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  display: inline-block;
+  line-height: 1;
+  font-family: 'Material Symbols Outlined';
 }
